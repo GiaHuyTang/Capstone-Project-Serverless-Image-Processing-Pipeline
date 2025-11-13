@@ -1,0 +1,54 @@
+{
+  "Comment": "Serverless Image Processing Pipeline Workflow",
+  "StartAt": "InvokeImageResizer",
+  "States": {
+    "InvokeImageResizer": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:us-east-1:396608800509:function:capstone-resizedImageFunction",
+        "Payload.$": "$"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSAPICallFailed"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "ImageProcessingFailed"
+        }
+      ],
+      "Next": "CheckResizeStatus"
+    },
+    "CheckResizeStatus": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Payload.status",
+          "StringEquals": "SUCCESS",
+          "Next": "ImageProcessingSuccess"
+        }
+      ],
+      "Default": "ImageProcessingFailed"
+    },
+    "ImageProcessingSuccess": {
+      "Type": "Succeed",
+      "Comment": "Image processing completed successfully."
+    },
+    "ImageProcessingFailed": {
+      "Type": "Fail",
+      "Cause": "Image resizing failed.",
+      "Error": "ImageResizeError"
+    }
+  }
+}

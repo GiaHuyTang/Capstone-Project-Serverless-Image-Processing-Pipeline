@@ -1,0 +1,54 @@
+import json
+import os
+import boto3
+from PIL import Image
+from io import BytesIO
+
+DESTINATION_BUCKET = 'capstone-resized-image'
+S3_CLIENT = boto3.client('s3')
+
+def lambda_handler(event, context):
+    try:
+        # 1. Get information from the Step Function Input (sent by API Gateway)
+        source_bucket = event['source_bucket']
+        object_key = event['file_key']
+        
+        print(f"Processing image: s3://{source_bucket}/{object_key}")
+
+        # 2. Download the image from S3
+        response = S3_CLIENT.get_object(Bucket=source_bucket, Key=object_key)
+        image_data = response['Body'].read()
+        image = Image.open(BytesIO(image_data))
+
+        # 3. Resize the image to a thumbnail (e.g., 128x128)
+        image.thumbnail((128, 128))
+        
+        # 4. Save the resized image to a buffer
+        buffer = BytesIO()
+        # Save using the original image format if possible, otherwise use JPEG
+        image_format = image.format if image.format in ['JPEG', 'PNG'] else 'JPEG'
+        image.save(buffer, format=image_format)
+        buffer.seek(0)
+
+        # 5. Upload the resized image to the destination S3 bucket
+        resized_key = f"thumbnail/{object_key}"
+        S3_CLIENT.put_object(
+            Bucket=DESTINATION_BUCKET,
+            Key=resized_key,
+            Body=buffer,
+            ContentType=response['ContentType']
+        )
+        
+        # Return success result to Step Function
+        return {
+            'status': 'SUCCESS',
+            'message': f"Image resized and saved to s3://{DESTINATION_BUCKET}/{resized_key}"
+        }
+
+    except Exception as e:
+        print(f"Error: {e}")
+        # Return failure result (Step Function will use Choice State to catch)
+        return {
+            'status': 'FAILED',
+            'error': str(e)
+        }
