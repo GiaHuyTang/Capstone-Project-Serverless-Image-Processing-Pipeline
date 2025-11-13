@@ -73,9 +73,9 @@ The `Integration Request` for the POST method uses the following Velocity Templa
 Follow these steps to test the completed application and generate proof for submission:
 
 
-### Upload Source Data: Upload your test image (e.g., img1.jpg) to the capstone-original-image S3 Bucket.
+* **Upload Source Data**: Upload your test image (e.g., img1.jpg) to the capstone-original-image S3 Bucket.
 
-### Setup API Call (Postman):
+* **Setup API Call (Postman)**:
 
 Method: POST
 
@@ -83,7 +83,7 @@ URL: Use your deployed Stage Invoke URL.
 
 Headers: Set Content-Type: application/json.
 
-### Send Request Body: Use the following JSON body, ensuring the file_key matches the file uploaded to S3:
+* **Send Request Body**: Use the following JSON body, ensuring the file_key matches the file uploaded to S3:
 
 ```JSON
 
@@ -91,13 +91,13 @@ Headers: Set Content-Type: application/json.
   "file_key": "img1.jpg"
 }
 ```
-### Verify Workflow Execution:
+* **Verify Workflow Execution**:
 
 Check the AWS Step Functions Console to confirm a new Execution was created and successfully transitions to Succeeded.
 
 Verify the Graph View shows the correct Choice and Success states were executed.
 
 
-### Verify Output: Check the destination S3 Bucket (capstone-resized-image) to confirm that the resized image file has been successfully stored.
+* **Verify Output**: Check the destination S3 Bucket (capstone-resized-image) to confirm that the resized image file has been successfully stored.
 
 Author: Gia Huy Tang
