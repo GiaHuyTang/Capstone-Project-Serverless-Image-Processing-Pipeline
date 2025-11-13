@@ -32,6 +32,7 @@ The system's data flow is structured to separate orchestration from compute logi
                           |   CloudWatch    | 
  
                           +-----------------+
+```
 ***
 
 ## 3. Prerequisites & Configuration Details
