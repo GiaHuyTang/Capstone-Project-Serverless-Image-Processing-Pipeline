@@ -19,9 +19,9 @@ The system's data flow is structured to separate orchestration from compute logi
 **(Please insert your Architecture Diagram image here)**
 ***
 
-## ⚙️ 3. Prerequisites & Configuration Details
+## 3. Prerequisites & Configuration Details
 
-### 3.1. Prerequisites
+### Prerequisites
 
 To successfully deploy and run this application, the following are required:
 
@@ -29,7 +29,7 @@ To successfully deploy and run this application, the following are required:
 * **Lambda Layer:** A Lambda Layer containing the native dependencies for image processing (e.g., the **Pillow** library for Python) must be created and attached to the Lambda Function[cite: 10, 11].
 * **Source Code:** Lambda Function code (`lambda_function.py`) and the Step Function Definition (`step_function_asl.json`) must be deployed.
 
-### 3.2. Core Resource Configuration
+### Core Resource Configuration
 
 All resources are configured in the `US East (N. Virginia)` region.
 
@@ -39,9 +39,9 @@ All resources are configured in the `US East (N. Virginia)` region.
 | **S3 Bucket (Original)** | Name | `capstone-original-image` |
 | **S3 Bucket (Resized)** | Name | `capstone-resized-image` |
 | **Step Function** | State Machine ARN | `arn:aws:states:us-east-1:396608800509:stateMachine:capstoneProject-cloudComputing` |
-| **API Endpoint** | Base Invoke URL | `[YOUR_API_ID].execute-api.us-east-1.amazonaws.com/[STAGE_NAME]/[RESOURCE]` |
+| **API Endpoint** | Base Invoke URL | `https://0vb4hngj8g.execute-api.us-east-1.amazonaws.com/please-run` |
 
-### 3.3. API Gateway VTL Mapping (Crucial Integration)
+### API Gateway VTL Mapping (Crucial Integration)
 
 The `Integration Request` for the POST method uses the following Velocity Template Language (VTL) to correctly format the request body into the required Step Function input structure (`stateMachineArn`, `input`, `name`):
 
@@ -53,7 +53,7 @@ The `Integration Request` for the POST method uses the following Velocity Templa
 }
 ```
 
-## 5. Testing and Verification Instructions
+## 4. Testing and Verification Instructions
 Follow these steps to test the completed application and generate proof for submission:
 
 
