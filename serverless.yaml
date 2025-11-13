@@ -1,0 +1,101 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Capstone Project - Serverless Image Processing Pipeline
+
+# ------------------------------------------------------------
+# Global Configuration
+# ------------------------------------------------------------
+Globals:
+  Function:
+    Runtime: python3.9
+    Timeout: 30
+    MemorySize: 512
+    # Ensure this role has full access to S3 (GetObject, PutObject) and CloudWatch Logs
+    Policies:
+      - S3ReadWritePolicy:
+          BucketName: capstone-original-image
+      - S3ReadWritePolicy:
+          BucketName: capstone-resized-image
+
+# ------------------------------------------------------------
+# Parameters (Used to reference existing resources or user inputs)
+# ------------------------------------------------------------
+Parameters:
+  PillowLayerARN:
+    Type: String
+    Description: The ARN for the pre-built Lambda Layer containing the Pillow library.
+    Default: 'arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p312-pillow:2' 
+
+# ------------------------------------------------------------
+# Resources
+# ------------------------------------------------------------
+Resources:
+
+  # 1. Lambda Function for Image Resizing
+  ImageResizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: capstone-resizedImageFunction
+      Handler: lambda_function.handler 
+      CodeUri: . 
+      Layers:
+        - !Ref PillowLayerARN
+      Environment:
+        Variables:
+          SOURCE_BUCKET: capstone-original-image
+          DESTINATION_BUCKET: capstone-resized-image
+      
+  # 2. Step Functions State Machine Definition
+  ImageProcessingStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: step_function_asl.json 
+      StateMachineName: capstoneProject-cloudComputing
+      Type: STANDARD
+      # IAM Role for the State Machine to call Lambda
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ImageResizerFunction
+        - Statement:
+            Effect: "Allow"
+            Action:
+              - "states:StartExecution"
+              - "states:StopExecution"
+            Resource: "*" # Allows Step Functions to manage executions
+
+  # 3. API Gateway Endpoint (Integrated with Step Functions)
+  #    This structure uses a PassThrough VTL similar to your successful configuration.
+  ApiGatewayEndpoint:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: please-run 
+      DefinitionBody:
+        swagger: '2.0'
+        info:
+          title: CapstoneImageApi
+        paths:
+          /:
+            post:
+              x-amazon-apigateway-integration:
+                type: 'aws'
+                # Uses the Step Functions service endpoint
+                uri: !Sub 'arn:aws:apigateway:${AWS::Region}:states:action/StartExecution'
+                credentials: 'arn:aws:iam::396608800509:role/capstone-API-GW-To-StepFunctions-Execution-Role'
+                httpMethod: 'POST'
+                passthroughBehavior: 'WHEN_NO_MATCH'
+                requestTemplates:
+                  application/json: |
+                    {
+                      "stateMachineArn": "${ImageProcessingStateMachine.Arn}",
+                      "input": "{\"source_bucket\": \"capstone-original-image\",\"file_key\": \"$input.path('$.file_key')\"}",
+                      "name": "$context.requestId"
+                    }
+                responses: {} # Simplified response handling
+
+# ------------------------------------------------------------
+# Outputs (Provides easy access to deployed resources)
+# ------------------------------------------------------------
+Outputs:
+  ApiInvokeURL:
+    Description: "API Gateway endpoint URL for invoking the Step Function"
+    Value: !Sub "https://${ApiGatewayEndpoint}.execute-api.${AWS::Region}.amazonaws.com/${ApiGatewayEndpoint.Stage}"
